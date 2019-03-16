@@ -1,6 +1,24 @@
+1. Katacoda playground
+
+https://learn.openshift.com/introduction/getting-started/
+
+user: developer
+pass: developer
+
+2. PaaS backup Cluster
+
+https://manage.openshift.com/
+
+Login with Google account
+
+
+3. Deploy Image
+
 openshiftroadshow/parksmap-katacoda:1.0.0
 
-nationalparks-katacoda
+4. Source 2 Image
 
-https://github.com/openshift-roadshow/nationalparks-katacoda
+Name: nationalparks-katacoda
+GitHub Repository: https://github.com/openshift-roadshow/nationalparks-katacoda
+
 
