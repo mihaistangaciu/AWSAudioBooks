@@ -1,6 +1,0 @@
-openshiftroadshow/parksmap-katacoda:1.0.0
-
-nationalparks-katacoda
-
-https://github.com/openshift-roadshow/nationalparks-katacoda
-

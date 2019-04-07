@@ -1,10 +1,12 @@
-var API_ENDPOINT = "YOUR_API_GATEWAY_ENDPOINT"
+var API_ENDPOINT = "https://wvxy7tf368.execute-api.us-east-1.amazonaws.com/dev"
 
 document.getElementById("sayButton").onclick = function(){
 
 	var inputData = {
 		"voice": $('#voiceSelected option:selected').val(),
-		"text" : $('#postText').val()
+		"text" : $('#postText').val(),
+		"sourceLang" : $('#sourcelang option:selected').val(),
+		"destLang" : $('#destlang option:selected').val()
 	};
 
 	$.ajax({

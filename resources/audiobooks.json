@@ -1,0 +1,301 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "My Cloudfront API Gateway",
+  "Resources": {
+    "apiGateway": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "POSTReaderAPI",
+        "Description": "My POST Reader API"
+      }
+    },
+    "GetPostsLambdaPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:invokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "GetPosts",
+            "Arn"
+          ]
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:aws:execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "apiGateway"
+              },
+              "/*"
+            ]
+          ]
+        }
+      }
+    },
+    "NewPostsLambdaPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:invokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "NewPost",
+            "Arn"
+          ]
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:aws:execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "apiGateway"
+              },
+              "/*"
+            ]
+          ]
+        }
+      }
+    },
+    "apiGatewayGetMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "DependsOn": "GetPostsLambdaPermission",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "GET",
+        "RequestParameters": {
+          "method.request.querystring.postId": "false"
+        },
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:aws:apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "GetPosts",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          },
+          "RequestTemplates": {
+            "application/json": {
+              "Fn::Join": [
+                "",
+                [
+                  "{",
+                  "  \"postId\": \"$input.params('postId')\"",
+                  "}"
+                ]
+              ]
+            }
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": 200
+            }
+          ]
+        },
+        "ResourceId": {
+          "Fn::GetAtt": [
+            "apiGateway",
+            "RootResourceId"
+          ]
+        },
+        "RestApiId": {
+          "Ref": "apiGateway"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": 200
+          }
+        ]
+      }
+    },
+    "apiGatewayPostMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "DependsOn": "NewPostsLambdaPermission",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "POST",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:aws:apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "NewPost",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": 200
+            }
+          ]
+        },
+        "ResourceId": {
+          "Fn::GetAtt": [
+            "apiGateway",
+            "RootResourceId"
+          ]
+        },
+        "RestApiId": {
+          "Ref": "apiGateway"
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": 200
+          }
+        ]
+      }
+    },
+    "GetPosts": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "lambda_function.lambda_handler",
+        "Runtime": "python2.7",
+        "Code": {
+          "S3Bucket": "www.aad.belgrade",
+          "S3Key": "AAD_Post_Reader_Get_Post-8e175372-a377-4e77-9fc9-f7d368000ef9.zip"
+        },
+        "Description": "",
+        "MemorySize": 128,
+        "Timeout": 30,
+        "Role": "arn:aws:iam::033860651502:role/AdTLambdaPostsReader",
+        "Environment": {
+          "Variables": {
+            "DB_TABLE_NAME": { "Ref": "dynamoPostsTable" }
+          }
+        }
+      }
+    },
+    "NewPost": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "lambda_function.lambda_handler",
+        "Runtime": "python2.7",
+        "Code": {
+          "S3Bucket": "www.aad.belgrade",
+          "S3Key": "AAD_Post_Reader_New_Posts-d2d2d6c7-faba-413e-b5db-0e1dff1103e0.zip"
+        },
+        "Description": "",
+        "MemorySize": 128,
+        "Timeout": 30,
+        "Role": "arn:aws:iam::033860651502:role/AdTLambdaPostsReader",
+        "Environment": {
+          "Variables": {
+            "DB_TABLE_NAME": { "Ref": "dynamoPostsTable" },
+            "SNS_TOPIC": { "Ref": "lambdaTopic" }
+          }
+        }
+      }
+    },
+    "ConvertToAudio": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "lambda_function.lambda_handler",
+        "Runtime": "python2.7",
+        "Code": {
+          "S3Bucket": "www.aad.belgrade",
+          "S3Key": "AAD_Post_Reader_Convert_to_Audio-c2f3b97f-5797-4a8e-8742-ecb0c7386b2c.zip"
+        },
+        "Description": "",
+        "MemorySize": 128,
+        "Timeout": 30,
+        "Role": "arn:aws:iam::033860651502:role/AdTLambdaPostsReader",
+        "Environment": {
+          "Variables": {
+            "DB_TABLE_NAME": { "Ref": "dynamoPostsTable" },
+            "BUCKET_NAME": "www.aad.belgrade"
+          }
+        }
+      }
+    },
+    "lambdaTopic": {
+      "Properties": {
+        "DisplayName": "Topic that invokes the Lambda function",
+        "Subscription": [
+          {
+            "Endpoint": { "Fn::GetAtt": [ "ConvertToAudio", "Arn" ] },
+            "Protocol": "lambda"
+          }
+        ]
+      },
+      "Type": "AWS::SNS::Topic"
+    },
+    "ConvertToAudiolambdaPermission": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": { "Fn::GetAtt": [ "ConvertToAudio", "Arn" ] },
+        "Principal": "sns.amazonaws.com",
+        "SourceArn": { "Ref": "lambdaTopic" }
+      },
+      "Type": "AWS::Lambda::Permission"
+    },
+
+    "dynamoPostsTable" : {
+      "Type" : "AWS::DynamoDB::Table",
+      "Properties" : {
+        "AttributeDefinitions" : [
+          {
+            "AttributeName" : "id",
+            "AttributeType" : "S"
+          }
+        ],
+        "KeySchema" : [
+          {
+            "AttributeName" : "id",
+            "KeyType" : "HASH"
+          }
+        ],
+        "ProvisionedThroughput" : {
+          "ReadCapacityUnits" : "5",
+          "WriteCapacityUnits" : "5"
+        },
+        "TableName" : "postsCF"
+      }
+    }
+
+  }
+}
