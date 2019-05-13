@@ -1,4 +1,4 @@
-var API_ENDPOINT = "https://wvxy7tf368.execute-api.us-east-1.amazonaws.com/dev"
+var API_ENDPOINT = "https://cwk4klvnxf.execute-api.us-east-1.amazonaws.com/dev"
 
 document.getElementById("sayButton").onclick = function(){
 
